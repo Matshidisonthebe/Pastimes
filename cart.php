@@ -260,6 +260,62 @@ if (!$checkout_success && isset($_SESSION['cart']) && !empty($_SESSION['cart']))
             color: #2c3e50;
         }
 
+        /* Clear Cart Modal Styles */
+        .modal-warning-icon {
+            width: 80px;
+            height: 80px;
+            background-color: #e74c3c;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 50px;
+        }
+
+        .cart-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-clear-cart {
+            background-color: #e74c3c;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .btn-clear-cart:hover {
+            background-color: #c0392b;
+            transform: translateY(-2px);
+            box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+        }
+
+        .cart-summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .cart-summary h3 {
+            margin: 0;
+        }
+
+        .checkout-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
         @media (max-width: 600px) {
             .modal-content {
                 padding: 30px 20px;
@@ -274,6 +330,23 @@ if (!$checkout_success && isset($_SESSION['cart']) && !empty($_SESSION['cart']))
             }
 
             .modal-btn {
+                width: 100%;
+            }
+
+            .cart-summary {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .checkout-actions {
+                flex-direction: column;
+            }
+
+            .checkout-actions .btn {
+                width: 100%;
+            }
+
+            .btn-clear-cart {
                 width: 100%;
             }
         }
@@ -330,10 +403,13 @@ if (!$checkout_success && isset($_SESSION['cart']) && !empty($_SESSION['cart']))
                     echo '</table>';
                     echo '<div class="cart-summary">';
                     echo '<h3>Cart Total: $' . number_format($total, 2) . '</h3>';
+                    echo '<div class="checkout-actions">';
                     echo '<form method="POST" style="display: inline;">';
                     echo '<input type="hidden" name="action" value="checkout">';
                     echo '<button type="submit" class="btn btn-primary" onclick="return confirmCheckout();">Checkout</button>';
                     echo '</form>';
+                    echo '<button class="btn-clear-cart" onclick="openClearCartModal();">Clear Cart</button>';
+                    echo '</div>';
                     echo '</div>';
                 } else {
                     echo '<p>Your cart is empty. <a href="shop.php">Continue Shopping</a></p>';
@@ -378,6 +454,21 @@ if (!$checkout_success && isset($_SESSION['cart']) && !empty($_SESSION['cart']))
         </div>
     </div>
 
+    <!-- Clear Cart Confirmation Modal -->
+    <div id="clearCartModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-warning-icon">⚠</div>
+            <h2 class="modal-title">Clear Cart?</h2>
+            <p class="modal-subtitle">Are you sure you want to clear all items from your cart?</p>
+            <p style="color: #7f8c8d; font-size: 14px;">This action cannot be undone.</p>
+
+            <div class="modal-buttons">
+                <button class="modal-btn btn-primary-modal" onclick="confirmClearCart();">Yes, Clear Cart</button>
+                <button class="modal-btn btn-secondary-modal" onclick="closeClearCartModal();">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <footer>
         <div class="container">
             <p>&copy; 2026 Pastimes Clothing Store. All rights reserved.</p>
@@ -398,11 +489,56 @@ if (!$checkout_success && isset($_SESSION['cart']) && !empty($_SESSION['cart']))
             return confirm('Proceed with checkout? Your cart will be cleared after confirming.');
         }
 
-        // Close modal when clicking outside
-        const modal = document.getElementById('checkoutModal');
-        if (modal) {
+        // Clear cart modal functions
+        function openClearCartModal() {
+            const modal = document.getElementById('clearCartModal');
+            modal.classList.add('show');
+        }
+
+        function closeClearCartModal() {
+            const modal = document.getElementById('clearCartModal');
+            modal.classList.remove('show');
+        }
+
+        function confirmClearCart() {
+            // Send AJAX request to clear cart
+            fetch('clear_cart.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ action: 'clear' })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Reload the page to show empty cart
+                    window.location.reload();
+                } else {
+                    alert('Error clearing cart. Please try again.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error clearing cart. Please try again.');
+            });
+        }
+
+        // Close clear cart modal when clicking outside
+        const clearCartModal = document.getElementById('clearCartModal');
+        if (clearCartModal) {
             window.addEventListener('click', function(event) {
-                if (event.target === modal) {
+                if (event.target === clearCartModal) {
+                    closeClearCartModal();
+                }
+            });
+        }
+
+        // Close checkout modal when clicking outside (if needed in future)
+        const checkoutModal = document.getElementById('checkoutModal');
+        if (checkoutModal) {
+            window.addEventListener('click', function(event) {
+                if (event.target === checkoutModal) {
                     // Don't close on background click for order confirmation
                     // Users must use the buttons
                 }
