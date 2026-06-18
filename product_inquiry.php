@@ -56,18 +56,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     // Insert inquiry into database
-    $sql = "INSERT INTO product_inquiries (user_id, message, product_description, price, image_path) 
-            VALUES ($user_id, '$inquiry_message', '$product_description', $price, '$image_path')";
-    
-    if ($conn->query($sql) === TRUE) {
-        $message = "Your inquiry has been submitted successfully! Admin will review it soon.";
-        $message_type = "success";
+    if (empty($message)) {
+        $sql = "INSERT INTO product_inquiries (user_id, message, product_description, price, image_path) 
+                VALUES ($user_id, '$inquiry_message', '$product_description', $price, '$image_path')";
         
-        // Clear form
-        $_POST = array();
-    } else {
-        $message = "Error submitting inquiry: " . $conn->error;
-        $message_type = "error";
+        if ($conn->query($sql) === TRUE) {
+            $message = "Your inquiry has been submitted successfully! Admin will review it soon.";
+            $message_type = "success";
+            
+            // Clear form
+            $_POST = array();
+        } else {
+            $message = "Error submitting inquiry: " . $conn->error;
+            $message_type = "error";
+        }
     }
 }
 
@@ -150,6 +152,13 @@ if ($inquiries_result->num_rows > 0) {
         .form-group input[type="file"] {
             padding: 8px;
             cursor: pointer;
+        }
+
+        .form-group small {
+            display: block;
+            color: #666;
+            margin-top: 5px;
+            font-size: 0.9em;
         }
 
         .form-row {
@@ -266,6 +275,12 @@ if ($inquiries_result->num_rows > 0) {
             max-height: 200px;
             border-radius: 5px;
             margin: 10px 0;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .inquiry-image:hover {
+            transform: scale(1.05);
         }
 
         .inquiry-details {
@@ -297,6 +312,25 @@ if ($inquiries_result->num_rows > 0) {
         .no-inquiries p {
             font-size: 1.1em;
             margin: 10px 0;
+        }
+
+        .admin-notes {
+            background: #f0f7ff;
+            padding: 15px;
+            border-left: 4px solid #667eea;
+            border-radius: 3px;
+            margin-top: 15px;
+        }
+
+        .admin-notes h5 {
+            margin: 0 0 10px 0;
+            color: #0c5460;
+        }
+
+        .admin-notes p {
+            margin: 0;
+            color: #333;
+            line-height: 1.6;
         }
 
         @keyframes slideDown {
@@ -424,13 +458,13 @@ if ($inquiries_result->num_rows > 0) {
                             <?php if ($inquiry['image_path']): ?>
                                 <div class="inquiry-content">
                                     <h4>Product Image:</h4>
-                                    <img src="<?php echo htmlspecialchars($inquiry['image_path']); ?>" alt="Product" class="inquiry-image">
+                                    <img src="<?php echo htmlspecialchars($inquiry['image_path']); ?>" alt="Product" class="inquiry-image" onclick="openImageModal(this.src)">
                                 </div>
                             <?php endif; ?>
 
                             <?php if ($inquiry['admin_notes']): ?>
-                                <div class="inquiry-content" style="background: #f0f7ff; padding: 10px; border-left: 4px solid #667eea; border-radius: 3px;">
-                                    <h4>Admin Notes:</h4>
+                                <div class="admin-notes">
+                                    <h5>📝 Admin Notes:</h5>
                                     <p><?php echo nl2br(htmlspecialchars($inquiry['admin_notes'])); ?></p>
                                 </div>
                             <?php endif; ?>
@@ -446,11 +480,37 @@ if ($inquiries_result->num_rows > 0) {
         </div>
     </main>
 
+    <!-- Image Modal -->
+    <div id="imageModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); align-items: center; justify-content: center;">
+        <img id="modalImage" src="" alt="Product" style="max-width: 90%; max-height: 90%; border-radius: 10px;" onclick="closeImageModal()">
+    </div>
+
     <footer>
         <div class="container">
             <p>&copy; 2026 Pastimes Clothing Store. All rights reserved.</p>
         </div>
     </footer>
+
+    <script>
+        function openImageModal(src) {
+            const modal = document.getElementById('imageModal');
+            const img = document.getElementById('modalImage');
+            img.src = src;
+            modal.style.display = 'flex';
+        }
+
+        function closeImageModal() {
+            document.getElementById('imageModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('imageModal');
+            if (event.target == modal) {
+                closeImageModal();
+            }
+        }
+    </script>
 </body>
 </html>
 
